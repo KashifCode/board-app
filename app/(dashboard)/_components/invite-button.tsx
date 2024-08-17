@@ -17,7 +17,7 @@ export const InviteButton = () => {
                 Invite Members
             </Button>
         </DialogTrigger>
-        <DialogContent className="p-0 bg-transparent border-none max-w-[880px]">
+        <DialogContent title="Add Members" className="p-0 bg-transparent border-none max-w-[835px] lg:max-w-[880px]">
             <OrganizationProfile routing="hash"/>
         </DialogContent>
     </Dialog>
