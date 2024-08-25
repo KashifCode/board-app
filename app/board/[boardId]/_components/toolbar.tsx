@@ -6,7 +6,7 @@ import { ToolButton } from "./tool-button";
 
 interface ToolbarProps {
     canvasState: CanvasState;
-    setConvasState: (newState: CanvasState) => void;
+    setCanvasState: (newState: CanvasState) => void;
     undo: () => void;
     redo: () => void;
     canUndo: boolean;
@@ -15,7 +15,7 @@ interface ToolbarProps {
 
 export const Toolbar = ({
     canvasState,
-    setConvasState,
+    setCanvasState,
     undo,
     redo,
     canUndo,
@@ -27,7 +27,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Select"
                     icon={MousePointer2}
-                    onClick={() => setConvasState({ mode: CanvasMode.None })}
+                    onClick={() => setCanvasState({ mode: CanvasMode.None })}
                     isActive={
                         canvasState.mode === CanvasMode.None ||
                         canvasState.mode === CanvasMode.Translating ||
@@ -39,7 +39,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Text"
                     icon={Type}
-                    onClick={() => setConvasState({
+                    onClick={() => setCanvasState({
                         mode: CanvasMode.Inserting,
                         layerType: LayerType.Text,
                     })}
@@ -51,7 +51,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Sticky Note"
                     icon={StickyNote}
-                    onClick={() => setConvasState({
+                    onClick={() => setCanvasState({
                         mode: CanvasMode.Inserting,
                         layerType: LayerType.Note,
                     })}
@@ -63,7 +63,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Rectangle"
                     icon={Square}
-                    onClick={() => setConvasState({
+                    onClick={() => setCanvasState({
                         mode: CanvasMode.Inserting,
                         layerType: LayerType.Rectangle,
                     })}
@@ -75,7 +75,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Ellipse"
                     icon={Circle}
-                    onClick={() => setConvasState({
+                    onClick={() => setCanvasState({
                         mode: CanvasMode.Inserting,
                         layerType: LayerType.Ellipse,
                     })}
@@ -87,7 +87,7 @@ export const Toolbar = ({
                 <ToolButton
                     label="Pen"
                     icon={Pencil}
-                    onClick={() => setConvasState({
+                    onClick={() => setCanvasState({
                         mode: CanvasMode.Pencil,
                     })}
                     isActive={
