@@ -50,8 +50,6 @@ export const useSelectionBounds = () => {
         const selectedLayers = selection.map((layerId) => root.layers.get(layerId)!)
         .filter(Boolean);
 
-        console.log("selectedLayers", selectedLayers);
-
         return boundingBox(selectedLayers);
     }, shallow);
 };
