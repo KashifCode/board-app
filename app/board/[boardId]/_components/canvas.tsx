@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { nanoid } from 'nanoid';
 import { LiveObject } from "@liveblocks/client";
 
@@ -14,6 +14,8 @@ import {
     Side,
     XYWH,
 } from "@/types/canvas";
+import { useDisableScrollBounce } from "@/hooks/use-disable-scroll-bounce";
+import { useDeleteLayers } from "@/hooks/use-delete-layers";
 
 import { colorToCss, connectionIdToColor, findIntersectingLayersWithRectangle, penPointsToPathLayer, pointerEventToCanvasPoint, resizeBounds } from "@/lib/utils";
 import { Info } from "./info";
@@ -58,7 +60,8 @@ export const Canvas = ({
         b: 0,
     });
 
-    const histroy = useHistory();
+    useDisableScrollBounce();
+    const history = useHistory();
     const canUndo = useCanUndo();
     const canRedo = useCanRedo();
 
@@ -261,13 +264,13 @@ export const Canvas = ({
         corner: Side,
         initialBounds: XYWH,
     ) => {
-        histroy.pause();
+        history.pause();
         setCanvasState({
             mode: CanvasMode.Resizing,
             initialBounds,
             corner,
         })
-    }, [histroy]);
+    }, [history]);
 
     const onWheel = useCallback((e: React.WheelEvent) => {
         setCamera((camera) => ({
@@ -355,12 +358,12 @@ export const Canvas = ({
             setCanvasState({ mode: CanvasMode.None });
         }
 
-        histroy.resume();
+        history.resume();
     }, [
         setCanvasState,
         camera,
         canvasState,
-        histroy,
+        history,
         insertLayer,
         unselectLayers,
         insertPath
@@ -377,7 +380,7 @@ export const Canvas = ({
             return;
         }
 
-        histroy.pause();
+        history.pause();
         e.stopPropagation();
 
         const point = pointerEventToCanvasPoint(e, camera);
@@ -389,7 +392,7 @@ export const Canvas = ({
     }, [
         setCanvasState,
         camera,
-        histroy,
+        history,
         canvasState.mode,
     ]);
 
@@ -405,7 +408,39 @@ export const Canvas = ({
         }
 
         return layerIdsToColorSelection;
-    }, [selections])
+    }, [selections]);
+
+    const deleteLayers = useDeleteLayers();
+
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            switch (e.key) {
+                // case "Backspace":
+                // case "Delete": {
+                //     deleteLayers();
+                //     break;
+                // }
+                case "z": {
+                    if (e.ctrlKey || e.metaKey) {
+                        history.undo();
+                        break;
+                    }
+                }
+                case "y": {
+                    if (e.ctrlKey || e.metaKey) {
+                        history.redo();
+                        break;
+                    }
+                }
+            }
+        }
+
+        document.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+        }
+    }, [deleteLayers, history]);
 
     return (
         <main
@@ -418,8 +453,8 @@ export const Canvas = ({
                 setCanvasState={setCanvasState}
                 canUndo={canUndo}
                 canRedo={canRedo}
-                undo={histroy.undo}
-                redo={histroy.redo}
+                undo={history.undo}
+                redo={history.redo}
             />
             <SelectionTools
                 camera={camera}
@@ -460,12 +495,12 @@ export const Canvas = ({
                     )}
                     <CursorsPresence />
                     {pencilDraft != null && pencilDraft.length > 0 && (
-                        <Path 
+                        <Path
                             points={pencilDraft}
                             fill={colorToCss(lastUsedColor)}
                             x={0}
                             y={0}
-                            
+
                         />
                     )}
                 </g>
