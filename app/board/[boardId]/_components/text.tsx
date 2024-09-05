@@ -11,12 +11,13 @@ const font = Kalam({
 })
 
 const calculateFontSize = (width: number, height: number) => {
+    const minFontSize = 14;
     const maxFontSize = 96;
     const scaleFactor = 0.3;
     const fontSizeBasedOnHeight = height * scaleFactor;
     const fontSizeBasedOnWidth = width * scaleFactor;
 
-    return Math.min(fontSizeBasedOnHeight, fontSizeBasedOnWidth, maxFontSize);
+    return Math.max(Math.min(fontSizeBasedOnHeight, fontSizeBasedOnWidth, maxFontSize), minFontSize);
 }
 
 interface TextProps {

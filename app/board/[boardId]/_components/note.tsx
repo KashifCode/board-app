@@ -11,12 +11,13 @@ const font = Kalam({
 })
 
 const calculateFontSize = (width: number, height: number) => {
+    const minFontSize = 14;
     const maxFontSize = 96;
     const scaleFactor = 0.15;
     const fontSizeBasedOnHeight = height * scaleFactor;
     const fontSizeBasedOnWidth = width * scaleFactor;
 
-    return Math.min(fontSizeBasedOnHeight, fontSizeBasedOnWidth, maxFontSize);
+    return Math.max(Math.min(fontSizeBasedOnHeight, fontSizeBasedOnWidth, maxFontSize), minFontSize);
 }
 
 interface NoteProps {
@@ -56,7 +57,7 @@ export const Note = ({
             onPointerDown={(e) => onPointerDown(e, id)}
             style={{
                 outline: selectionColor ? `1px solid ${selectionColor}`: 'none',
-                backgroundColor: fill ? colorToCss(fill) : "#000",
+                backgroundColor: fill ? colorToCss(fill) : "#FFF9B1",
             }}
             className="shadow-md drop-shadow-xl"
         >
