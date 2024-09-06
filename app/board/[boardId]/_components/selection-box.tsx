@@ -23,7 +23,6 @@ export const SelectionBox = memo(({
     );
 
     const bounds = useSelectionBounds();
-    // console.log("bounds", bounds);
 
     if (!bounds) {
         return null;

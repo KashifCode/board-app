@@ -43,13 +43,15 @@ interface CanvasProps {
     boardId: string;
 }
 
-
 export const Canvas = ({
     boardId,
 }: CanvasProps) => {
     const layerIds = useStorage((root) => root.layerIds);
 
     const pencilDraft = useSelf((me) => me.presence.pencilDraft);
+    const selectedLayerId = useSelf((me) => me.presence.selection[0]);
+    const selectedLayer = useStorage((root) => root.layers.get(selectedLayerId));
+    
     const [canvasState, setCanvasState] = useState<CanvasState>({
         mode: CanvasMode.None,
     });
@@ -415,11 +417,14 @@ export const Canvas = ({
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
             switch (e.key) {
-                // case "Backspace":
-                // case "Delete": {
-                //     deleteLayers();
-                //     break;
-                // }
+                case "Backspace":
+                case "Delete": {
+                    if(selectedLayer?.type === LayerType.Note || selectedLayer?.type === LayerType.Text) {
+                        break;
+                    }
+                    deleteLayers();
+                    break;
+                }
                 case "z": {
                     if (e.ctrlKey || e.metaKey) {
                         history.undo();
@@ -440,7 +445,7 @@ export const Canvas = ({
         return () => {
             document.removeEventListener("keydown", onKeyDown);
         }
-    }, [deleteLayers, history]);
+    }, [deleteLayers, history, selectedLayer]);
 
     return (
         <main
