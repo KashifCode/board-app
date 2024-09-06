@@ -455,6 +455,7 @@ export const Canvas = ({
                 canRedo={canRedo}
                 undo={history.undo}
                 redo={history.redo}
+                unSelectLayers={unselectLayers}
             />
             <SelectionTools
                 camera={camera}

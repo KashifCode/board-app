@@ -11,6 +11,7 @@ interface ToolbarProps {
     redo: () => void;
     canUndo: boolean;
     canRedo: boolean;
+    unSelectLayers: () => void;
 };
 
 export const Toolbar = ({
@@ -20,6 +21,7 @@ export const Toolbar = ({
     redo,
     canUndo,
     canRedo,
+    unSelectLayers,
 }: ToolbarProps) => {
     return (
         <div className="absolute top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-4">
@@ -39,10 +41,13 @@ export const Toolbar = ({
                 <ToolButton
                     label="Text"
                     icon={Type}
-                    onClick={() => setCanvasState({
-                        mode: CanvasMode.Inserting,
-                        layerType: LayerType.Text,
-                    })}
+                    onClick={() => {
+                        setCanvasState({
+                            mode: CanvasMode.Inserting,
+                            layerType: LayerType.Text,
+                        });
+                        unSelectLayers();
+                    }}
                     isActive={
                         canvasState.mode === CanvasMode.Inserting &&
                         canvasState.layerType === LayerType.Text
@@ -51,10 +56,13 @@ export const Toolbar = ({
                 <ToolButton
                     label="Sticky Note"
                     icon={StickyNote}
-                    onClick={() => setCanvasState({
-                        mode: CanvasMode.Inserting,
-                        layerType: LayerType.Note,
-                    })}
+                    onClick={() => {
+                        setCanvasState({
+                            mode: CanvasMode.Inserting,
+                            layerType: LayerType.Note,
+                        });
+                        unSelectLayers();
+                    }}
                     isActive={
                         canvasState.mode === CanvasMode.Inserting &&
                         canvasState.layerType === LayerType.Note
@@ -63,10 +71,13 @@ export const Toolbar = ({
                 <ToolButton
                     label="Rectangle"
                     icon={Square}
-                    onClick={() => setCanvasState({
-                        mode: CanvasMode.Inserting,
-                        layerType: LayerType.Rectangle,
-                    })}
+                    onClick={() => {
+                        setCanvasState({
+                            mode: CanvasMode.Inserting,
+                            layerType: LayerType.Rectangle,
+                        });
+                        unSelectLayers();
+                    }}
                     isActive={
                         canvasState.mode === CanvasMode.Inserting &&
                         canvasState.layerType === LayerType.Rectangle
@@ -75,10 +86,13 @@ export const Toolbar = ({
                 <ToolButton
                     label="Ellipse"
                     icon={Circle}
-                    onClick={() => setCanvasState({
-                        mode: CanvasMode.Inserting,
-                        layerType: LayerType.Ellipse,
-                    })}
+                    onClick={() => {
+                        setCanvasState({
+                            mode: CanvasMode.Inserting,
+                            layerType: LayerType.Ellipse,
+                        });
+                        unSelectLayers();
+                    }}
                     isActive={
                         canvasState.mode === CanvasMode.Inserting &&
                         canvasState.layerType === LayerType.Ellipse
@@ -87,9 +101,12 @@ export const Toolbar = ({
                 <ToolButton
                     label="Pen"
                     icon={Pencil}
-                    onClick={() => setCanvasState({
-                        mode: CanvasMode.Pencil,
-                    })}
+                    onClick={() => {
+                        setCanvasState({
+                            mode: CanvasMode.Pencil,
+                        });
+                        unSelectLayers();
+                    }}
                     isActive={
                         canvasState.mode === CanvasMode.Pencil
                     }

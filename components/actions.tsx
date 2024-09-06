@@ -3,6 +3,7 @@
 import { toast } from "sonner";
 import { Link2, Pencil, Trash2 } from "lucide-react";
 import { DropdownMenuContentProps } from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
 
 import { ConfirmModal } from "@/components/confirm-modal";
 import {
@@ -10,7 +11,6 @@ import {
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useApiMutation } from "@/hooks/use-api-mutataion";
 import { api } from "@/convex/_generated/api";
@@ -32,6 +32,7 @@ export const Actions = ({
     id,
     title,
 }: ActionsProps) => {
+    const { push } = useRouter();
     const { onOpen } = useRenameModal();
     const { mutate, pending } = useApiMutation(api.board.remove);
 
@@ -44,7 +45,10 @@ export const Actions = ({
 
     const onDelete = () => {
         mutate({ id })
-            .then(() => toast.success("Board deleted"))
+            .then(() => {
+                push("/");
+                toast.success("Board deleted");
+            })
             .catch(() => toast.error("Failed to delete board"));
     }
 
