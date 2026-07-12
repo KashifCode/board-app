@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.17",
-    "@liveblocks/client": "^2.5.1",
-    "@liveblocks/node": "^2.5.1",
-    "@liveblocks/react": "^2.5.1",
+    "@liveblocks/client": "^3.22.0",
+    "@liveblocks/node": "^3.22.0",
+    "@liveblocks/react": "^3.22.0",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-dialog": "^1.1.19",

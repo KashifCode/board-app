@@ -50,7 +50,7 @@ export const Canvas = ({
 
     const pencilDraft = useSelf((me) => me.presence.pencilDraft);
     const selectedLayerId = useSelf((me) => me.presence.selection[0]);
-    const selectedLayer = useStorage((root) => root.layers.get(selectedLayerId));
+    const selectedLayer = useStorage((root) => selectedLayerId ? root.layers[selectedLayerId] : undefined);
     
     const [canvasState, setCanvasState] = useState<CanvasState>({
         mode: CanvasMode.None,
@@ -138,7 +138,7 @@ export const Canvas = ({
         current: Point,
         origin: Point,
     ) => {
-        const layers = storage.get("layers").toImmutable();
+        const layers = storage.get("layers");
         setCanvasState({
             mode: CanvasMode.SelectionNet,
             origin,
@@ -147,7 +147,7 @@ export const Canvas = ({
 
         const ids = findIntersectingLayersWithRectangle(
             layerIds,
-            layers,
+            new Map(Object.entries(layers.toJSON())) as any,
             origin,
             current,
         );
