@@ -7,10 +7,9 @@ export const Loading = () => {
                 src="/logo.svg"
                 alt="Logo"
                 width={120}
-                height={120}
+                height={94}
                 className="animate-pulse duration-700"
                 loading="eager"
-                style={{ width: "auto", height: "auto" }}
             />
         </div>
     )

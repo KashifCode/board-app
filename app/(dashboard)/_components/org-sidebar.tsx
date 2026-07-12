@@ -26,10 +26,9 @@ export const OrgSidebar = () => {
           <Image
             src="/logo.svg"
             alt="Logo"
-            height={50}
+            height={39}
             width={50}
             loading="eager"
-            style={{ width: "auto", height: "auto" }}
           />
           <span className={cn(
             "font-semibold text-2xl",

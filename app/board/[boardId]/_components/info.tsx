@@ -47,10 +47,9 @@ export const Info = ({
                         <Image
                             src="/logo.svg"
                             alt="Board logo"
-                            height={40}
+                            height={31}
                             width={40}
                             loading="eager"
-                            style={{ width: "auto", height: "auto" }}
                         />
                         <span className={cn(
                             "font-semibold text-xl ml-2 text-black",
