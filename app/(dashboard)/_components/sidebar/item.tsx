@@ -49,6 +49,7 @@ export const Item = ({
                         "rounded-md cursor-pointer opacity-75 hover:opacity-100 transition",
                         isActive && "opacity-100"
                     )}
+                    loading="eager"
                 />
             </Hint>
         </div>

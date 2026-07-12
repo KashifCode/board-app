@@ -1,12 +1,13 @@
 "use client";
 
-import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ClerkProvider, useAuth, RedirectToSignIn } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 import {
     AuthLoading,
     Authenticated,
-    ConvexReactClient
+    ConvexReactClient,
+    Unauthenticated
 } from "convex/react";
 import React from "react";
 import { Loading } from "@/components/auth/loading";
@@ -31,6 +32,9 @@ export const ConvexClientProvider = ({
                 <AuthLoading>
                     <Loading />
                 </AuthLoading>
+                <Unauthenticated>
+                    <RedirectToSignIn />
+                </Unauthenticated>
             </ConvexProviderWithClerk>
         </ClerkProvider>
     )

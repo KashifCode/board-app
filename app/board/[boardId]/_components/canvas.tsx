@@ -467,7 +467,7 @@ export const Canvas = ({
                 setLastUsedColor={setLastUsedColor}
             />
             <svg
-                className="h-[100vh] w-[100vw]"
+                className="h-screen w-screen"
                 onWheel={onWheel}
                 onPointerMove={onPointerMove}
                 onPointerLeave={onPointerLeave}

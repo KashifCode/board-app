@@ -49,6 +49,8 @@ export const Info = ({
                             alt="Board logo"
                             height={40}
                             width={40}
+                            loading="eager"
+                            style={{ width: "auto", height: "auto" }}
                         />
                         <span className={cn(
                             "font-semibold text-xl ml-2 text-black",
@@ -94,7 +96,7 @@ export const Info = ({
 export const InfoSkeleton = () => {
     return (
         <div
-            className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md w-[300px]"
+            className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md w-75"
         />
     )
 }

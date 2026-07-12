@@ -1,17 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useIsClient } from "usehooks-ts";
 
 import { RenameModal } from "@/components/modals/rename-modal";
 
 export const ModalProvider = () => {
-    const [isMounted, setIsMounted] = useState<boolean>(false);
+    const isClient = useIsClient();
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, [])
-
-    if(!isMounted) {
+    if(!isClient) {
         return null;
     }
 

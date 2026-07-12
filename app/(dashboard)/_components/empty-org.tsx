@@ -18,6 +18,7 @@ export const EmptyOrg = () => {
                 alt="Empty"
                 width={200}
                 height={200}
+                style={{ width: "auto", height: "auto" }}
             />
             <h2 className=" text-2xl font-semibold mt-6">
                 Welcome to Board

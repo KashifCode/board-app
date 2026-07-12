@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEventHandler } from 'react';
+import { useState, SyntheticEvent } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -28,12 +28,14 @@ export const RenameModal = () => {
     } = useRenameModal();
 
     const [title, setTitle] = useState(initialValues.title);
+    const [prevTitle, setPrevTitle] = useState(initialValues.title);
 
-    useEffect(() => {
+    if (initialValues.title !== prevTitle) {
+        setPrevTitle(initialValues.title);
         setTitle(initialValues.title);
-    }, [initialValues.title]);
+    }
 
-    const onSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    const onSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         mutate({
