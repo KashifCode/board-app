@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { nanoid } from 'nanoid';
 import { LiveObject } from "@liveblocks/client";
 
@@ -17,7 +17,7 @@ import {
 import { useDisableScrollBounce } from "@/hooks/use-disable-scroll-bounce";
 import { useDeleteLayers } from "@/hooks/use-delete-layers";
 
-import { colorToCss, connectionIdToColor, findIntersectingLayersWithRectangle, penPointsToPathLayer, pointerEventToCanvasPoint, resizeBounds } from "@/lib/utils";
+import { cn, colorToCss, connectionIdToColor, findIntersectingLayersWithRectangle, penPointsToPathLayer, pointerEventToCanvasPoint, resizeBounds } from "@/lib/utils";
 import { Info } from "./info";
 import { Participants } from "./participants";
 import { Toolbar } from "./toolbar";
@@ -55,12 +55,36 @@ export const Canvas = ({
     const [canvasState, setCanvasState] = useState<CanvasState>({
         mode: CanvasMode.None,
     });
-    const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
+    const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
     const [lastUsedColor, setLastUsedColor] = useState<Color>({
         r: 0,
         g: 0,
         b: 0,
     });
+
+    const zoomToPoint = useCallback((zoomAmount: number, clientX: number, clientY: number) => {
+        setCamera((camera) => {
+            const zoom = camera.zoom || 1;
+            const newZoom = Math.min(Math.max(zoom + zoomAmount, 0.1), 5);
+            
+            const canvasX = (clientX - camera.x) / zoom;
+            const canvasY = (clientY - camera.y) / zoom;
+            
+            return {
+                x: clientX - canvasX * newZoom,
+                y: clientY - canvasY * newZoom,
+                zoom: newZoom,
+            };
+        });
+    }, []);
+
+    const zoomIn = useCallback(() => {
+        zoomToPoint(0.1, window.innerWidth / 2, window.innerHeight / 2);
+    }, [zoomToPoint]);
+
+    const zoomOut = useCallback(() => {
+        zoomToPoint(-0.1, window.innerWidth / 2, window.innerHeight / 2);
+    }, [zoomToPoint]);
 
     useDisableScrollBounce();
     const history = useHistory();
@@ -132,6 +156,18 @@ export const Canvas = ({
             setMyPresence({ selection: [] }, { addToHistory: true });
         }
     }, []);
+
+    const abortCurrentAction = useMutation((
+        { setMyPresence }
+    ) => {
+        setMyPresence({ pencilDraft: null });
+        setCanvasState((current) => {
+            if (current.mode === CanvasMode.Pressing || current.mode === CanvasMode.SelectionNet || current.mode === CanvasMode.Translating || current.mode === CanvasMode.Resizing) {
+                return { mode: CanvasMode.None };
+            }
+            return current;
+        });
+    }, [setCanvasState]);
 
     const updateSelectionNet = useMutation((
         { storage, setMyPresence },
@@ -275,10 +311,83 @@ export const Canvas = ({
     }, [history]);
 
     const onWheel = useCallback((e: React.WheelEvent) => {
-        setCamera((camera) => ({
-            x: camera.x - e.deltaX,
-            y: camera.y - e.deltaY,
-        }));
+        if (e.ctrlKey) {
+            const zoomAmount = -e.deltaY * 0.005;
+            zoomToPoint(zoomAmount, e.clientX, e.clientY);
+        } else {
+            setCamera((camera) => ({
+                ...camera,
+                x: camera.x - e.deltaX,
+                y: camera.y - e.deltaY,
+            }));
+        }
+    }, [zoomToPoint]);
+
+    const touchPinchData = useRef<{ 
+        initialDist: number, 
+        initialZoom: number, 
+        initialCameraX: number,
+        initialCameraY: number,
+        initialCenter: Point 
+    } | null>(null);
+
+    const onTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            abortCurrentAction();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            const center = {
+                x: (touch1.clientX + touch2.clientX) / 2,
+                y: (touch1.clientY + touch2.clientY) / 2
+            };
+            
+            setCamera((camera) => {
+                touchPinchData.current = { 
+                    initialDist: dist, 
+                    initialZoom: camera.zoom || 1, 
+                    initialCameraX: camera.x,
+                    initialCameraY: camera.y,
+                    initialCenter: center 
+                };
+                return camera;
+            });
+        } else {
+            touchPinchData.current = null;
+        }
+    }, [abortCurrentAction]);
+
+    const onTouchMove = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2 && touchPinchData.current) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            const currentCenter = {
+                x: (touch1.clientX + touch2.clientX) / 2,
+                y: (touch1.clientY + touch2.clientY) / 2
+            };
+
+            const data = touchPinchData.current;
+            
+            const scaleAmount = currentDist / data.initialDist;
+            const newZoom = Math.min(Math.max(data.initialZoom * scaleAmount, 0.1), 5);
+            
+            const canvasX = (data.initialCenter.x - data.initialCameraX) / data.initialZoom;
+            const canvasY = (data.initialCenter.y - data.initialCameraY) / data.initialZoom;
+            
+            const newCameraX = currentCenter.x - canvasX * newZoom;
+            const newCameraY = currentCenter.y - canvasY * newZoom;
+
+            setCamera({
+                x: newCameraX,
+                y: newCameraY,
+                zoom: newZoom,
+            });
+        }
+    }, []);
+
+    const onTouchEnd = useCallback((e: React.TouchEvent) => {
+        touchPinchData.current = null;
     }, []);
 
     const onPointerMove = useMutation((
@@ -286,6 +395,17 @@ export const Canvas = ({
         e: React.PointerEvent
     ) => {
         e.preventDefault();
+
+        if (!e.isPrimary) return;
+
+        if (canvasState.mode === CanvasMode.Hand && e.buttons === 1) {
+            setCamera((camera) => ({
+                ...camera,
+                x: camera.x + e.movementX,
+                y: camera.y + e.movementY,
+            }));
+            return;
+        }
 
         const current = pointerEventToCanvasPoint(e, camera);
 
@@ -319,6 +439,12 @@ export const Canvas = ({
     const onPointerDown = useCallback((
         e: React.PointerEvent,
     ) => {
+        if (!e.isPrimary) return;
+        
+        if (canvasState.mode === CanvasMode.Hand) {
+            return;
+        }
+
         const point = pointerEventToCanvasPoint(e, camera);
         if (canvasState.mode === CanvasMode.Inserting) {
             return;
@@ -341,6 +467,8 @@ export const Canvas = ({
         { },
         e
     ) => {
+        if (!e.isPrimary) return;
+
         const point = pointerEventToCanvasPoint(e, camera);
 
         if (
@@ -357,7 +485,9 @@ export const Canvas = ({
         } else if (canvasState.mode === CanvasMode.Inserting) {
             insertLayer(canvasState.layerType, point);
         } else {
-            setCanvasState({ mode: CanvasMode.None });
+            setCanvasState({
+                mode: canvasState.mode === CanvasMode.Hand ? CanvasMode.Hand : CanvasMode.None,
+            });
         }
 
         history.resume();
@@ -461,22 +591,31 @@ export const Canvas = ({
                 undo={history.undo}
                 redo={history.redo}
                 unSelectLayers={unselectLayers}
+                zoomIn={zoomIn}
+                zoomOut={zoomOut}
             />
             <SelectionTools
                 camera={camera}
                 setLastUsedColor={setLastUsedColor}
             />
             <svg
-                className="h-screen w-screen"
+                className={cn(
+                    "h-screen w-screen",
+                    canvasState.mode === CanvasMode.Hand ? "cursor-grab active:cursor-grabbing" : ""
+                )}
                 onWheel={onWheel}
                 onPointerMove={onPointerMove}
                 onPointerLeave={onPointerLeave}
                 onPointerUp={onPointerUp}
                 onPointerDown={onPointerDown}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                onTouchCancel={onTouchEnd}
             >
                 <g
                     style={{
-                        transform: `translate(${camera.x}px, ${camera.y}px)`,
+                        transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom || 1})`,
                     }}
                 >
                     {layerIds.map((layerId) => (

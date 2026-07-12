@@ -1,4 +1,4 @@
-import { Circle, MousePointer2, Pencil, Redo2, Square, StickyNote, Type, Undo2 } from "lucide-react";
+import { Circle, Hand, MousePointer2, Pencil, Redo2, Square, StickyNote, Type, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { CanvasMode, CanvasState, LayerType } from "@/types/canvas";
 
@@ -12,6 +12,8 @@ interface ToolbarProps {
     canUndo: boolean;
     canRedo: boolean;
     unSelectLayers: () => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
 };
 
 export const Toolbar = ({
@@ -22,10 +24,12 @@ export const Toolbar = ({
     canUndo,
     canRedo,
     unSelectLayers,
+    zoomIn,
+    zoomOut,
 }: ToolbarProps) => {
     return (
-        <div className="absolute top-[50%] translate-y-[-50%] left-2 flex flex-col gap-y-4">
-            <div className="bg-white rounded-md p-1.5 flex gap-y-1 flex-col items-center shadow-md">
+        <div className="absolute md:top-[50%] md:-translate-y-[50%] md:left-2 bottom-2 left-1/2 -translate-x-1/2 md:translate-x-0 flex md:flex-col flex-row gap-2 md:gap-y-4 max-h-[calc(100%-120px)] md:max-h-[calc(100%-30px)] max-w-[calc(100%-32px)] overflow-x-auto overflow-y-hidden md:overflow-y-auto md:overflow-x-hidden z-50 pb-1 pr-1 pl-1 pt-1">
+            <div className="bg-white rounded-md p-1.5 flex md:flex-col flex-row gap-1 items-center shadow-md shrink-0">
                 <ToolButton
                     label="Select"
                     icon={MousePointer2}
@@ -36,6 +40,17 @@ export const Toolbar = ({
                         canvasState.mode === CanvasMode.SelectionNet ||
                         canvasState.mode === CanvasMode.Pressing ||
                         canvasState.mode === CanvasMode.Resizing
+                    }
+                />
+                <ToolButton
+                    label="Hand"
+                    icon={Hand}
+                    onClick={() => {
+                        setCanvasState({ mode: CanvasMode.Hand });
+                        unSelectLayers();
+                    }}
+                    isActive={
+                        canvasState.mode === CanvasMode.Hand
                     }
                 />
                 <ToolButton
@@ -112,7 +127,7 @@ export const Toolbar = ({
                     }
                 />
             </div>
-            <div className="bg-white rounded-md p-1.5 flex flex-col items-center shadow-md">
+            <div className="bg-white rounded-md p-1.5 flex md:flex-col flex-row gap-1 items-center shadow-md shrink-0">
                 <ToolButton
                     label="Undo"
                     icon={Undo2}
@@ -126,12 +141,26 @@ export const Toolbar = ({
                     isDisabled={!canRedo}
                 />
             </div>
+            <div className="bg-white rounded-md p-1.5 flex md:flex-col flex-row gap-1 items-center shadow-md shrink-0">
+                <ToolButton
+                    label="Zoom In"
+                    icon={ZoomIn}
+                    onClick={zoomIn}
+                />
+                <ToolButton
+                    label="Zoom Out"
+                    icon={ZoomOut}
+                    onClick={zoomOut}
+                />
+            </div>
         </div>
     )
 }
 
 export const ToolbarSkeleton = () => {
     return (
-        <div className="absolute top-[50%] translate-y-[-50%] left-2 flex flex-col gap-y-4 bg-white h-[360px] w-[52px] shadow-md rounded-md" />
+        <div className="absolute md:top-[50%] md:-translate-y-[50%] md:left-2 bottom-2 left-1/2 -translate-x-1/2 md:translate-x-0 flex md:flex-col flex-row gap-2 md:gap-y-4 max-h-[calc(100%-120px)] md:max-h-[calc(100%-30px)] max-w-[calc(100%-32px)] overflow-x-auto overflow-y-hidden md:overflow-y-auto md:overflow-x-hidden z-50">
+            <div className="bg-white h-[52px] w-[360px] md:h-[360px] md:w-[52px] shadow-md rounded-md" />
+        </div>
     );
 };

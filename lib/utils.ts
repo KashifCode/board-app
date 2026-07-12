@@ -36,12 +36,12 @@ export function connectionIdToColor(connectionId: number): string {
 }
 
 export function pointerEventToCanvasPoint(
-  e: React.PointerEvent,
+  e: React.PointerEvent | React.WheelEvent | { clientX: number, clientY: number },
   camera: Camera,
 ) {
   return {
-    x: Math.round(e.clientX) - camera.x,
-    y: Math.round(e.clientY) - camera.y,
+    x: Math.round(e.clientX) / (camera.zoom || 1) - camera.x / (camera.zoom || 1),
+    y: Math.round(e.clientY) / (camera.zoom || 1) - camera.y / (camera.zoom || 1),
   };
 };
 

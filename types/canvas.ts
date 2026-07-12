@@ -7,6 +7,7 @@ export type Color = {
 export type Camera = {
     x: number;
     y: number;
+    zoom?: number;
 };
 
 export enum LayerType {
@@ -115,6 +116,9 @@ export type CanvasState =
         mode: CanvasMode.Resizing,
         initialBounds: XYWH;
         corner: Side;
+    }
+    | {
+        mode: CanvasMode.Hand;
     };
 
 export enum CanvasMode {
@@ -125,6 +129,7 @@ export enum CanvasMode {
     Inserting,
     Resizing,
     Pencil,
+    Hand,
 };
 
 export type Layer = RectangleLayer | EllipseLayer | PathLayer | TextLayer | NoteLayer;

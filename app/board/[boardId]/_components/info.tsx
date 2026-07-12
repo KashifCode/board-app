@@ -52,7 +52,7 @@ export const Info = ({
                             loading="eager"
                         />
                         <span className={cn(
-                            "font-semibold text-xl ml-2 text-black",
+                            "font-semibold text-xl ml-2 text-black hidden md:block",
                             font.className,
                         )}>
                             Board
@@ -64,7 +64,7 @@ export const Info = ({
             <Hint label="Edit title" side="bottom" sideOffset={10}>
                 <Button
                     variant="board"
-                    className="text-base font-normal px-2"
+                    className="text-base font-normal px-2 max-w-[100px] md:max-w-[200px] truncate"
                     onClick={() => onOpen(data._id, data.title)}
                 >
                     {data.title}
