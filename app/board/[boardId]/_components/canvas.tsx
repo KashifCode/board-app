@@ -515,7 +515,7 @@ export const Canvas = ({
 
         if (!e.isPrimary) return;
 
-        if (canvasState.mode === CanvasMode.Hand && e.buttons === 1) {
+        if ((canvasState.mode === CanvasMode.Hand && e.buttons === 1) || e.buttons === 2 || e.buttons === 4) {
             setCamera((camera) => ({
                 ...camera,
                 x: camera.x + e.movementX,
@@ -574,6 +574,10 @@ export const Canvas = ({
     ) => {
         if (!e.isPrimary) return;
         
+        if (e.button === 2 || e.button === 1) {
+            return;
+        }
+
         if (canvasState.mode === CanvasMode.Hand) {
             return;
         }
@@ -616,6 +620,10 @@ export const Canvas = ({
         e
     ) => {
         if (!e.isPrimary) return;
+        
+        if (e.button === 2 || e.button === 1) {
+            return;
+        }
 
         const point = pointerEventToCanvasPoint(e, camera);
 
@@ -754,6 +762,7 @@ export const Canvas = ({
     return (
         <main
             className="h-full w-full relative bg-neutral-100 touch-none"
+            onContextMenu={(e) => e.preventDefault()}
         >
             <Info boardId={boardId} />
             <Participants />
