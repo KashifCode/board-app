@@ -332,7 +332,6 @@ export const Canvas = ({
 
         if (
             canvasState.mode !== CanvasMode.Pencil ||
-            e.buttons !== 1 ||
             pencilDraft == null
         ) {
             return;
@@ -802,7 +801,7 @@ export const Canvas = ({
             />
             <svg
                 className={cn(
-                    "h-screen w-screen",
+                    "h-screen w-screen touch-none",
                     canvasState.mode === CanvasMode.Hand ? "cursor-grab active:cursor-grabbing" : ""
                 )}
                 onWheel={onWheel}
