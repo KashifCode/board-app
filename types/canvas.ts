@@ -104,6 +104,8 @@ export type CanvasState =
     | {
         mode: CanvasMode.Inserting,
         layerType: LayerType.Ellipse | LayerType.Rectangle | LayerType.Text | LayerType.Note;
+        origin?: Point;
+        current?: Point;
     }
     | {
         mode: CanvasMode.Pencil;

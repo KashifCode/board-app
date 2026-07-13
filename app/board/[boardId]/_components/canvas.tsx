@@ -94,7 +94,7 @@ export const Canvas = ({
     const insertLayer = useMutation((
         { storage, setMyPresence },
         layerType: LayerType.Ellipse | LayerType.Rectangle | LayerType.Text | LayerType.Note,
-        position: Point,
+        bounds: XYWH,
     ) => {
         const liveLayers = storage.get("layers");
         if (liveLayers.size >= MAX_LAYERS) {
@@ -105,10 +105,10 @@ export const Canvas = ({
         const layerId = nanoid();
         const layer = new LiveObject({
             type: layerType,
-            x: position.x,
-            y: position.y,
-            height: 100,
-            width: 100,
+            x: bounds.x,
+            y: bounds.y,
+            height: bounds.height,
+            width: bounds.width,
             fill: lastUsedColor,
         });
 
@@ -116,7 +116,8 @@ export const Canvas = ({
         liveLayers.set(layerId, layer);
 
         setMyPresence({ selection: [layerId] }, { addToHistory: true });
-        setCanvasState({ mode: CanvasMode.None });
+        
+        return layerId;
     }, [lastUsedColor]);
 
     const translateSelectedLayers = useMutation((
@@ -419,6 +420,15 @@ export const Canvas = ({
             resizeSelectedLayer(current);
         } else if (canvasState.mode === CanvasMode.Pencil) {
             continueDrawing(current, e);
+        } else if (canvasState.mode === CanvasMode.Inserting) {
+            if (canvasState.origin) {
+                setCanvasState({
+                    mode: CanvasMode.Inserting,
+                    layerType: canvasState.layerType,
+                    origin: canvasState.origin,
+                    current,
+                });
+            }
         }
 
         setMyPresence({ cursor: current });
@@ -447,6 +457,12 @@ export const Canvas = ({
 
         const point = pointerEventToCanvasPoint(e, camera);
         if (canvasState.mode === CanvasMode.Inserting) {
+            setCanvasState({
+                mode: CanvasMode.Inserting,
+                layerType: canvasState.layerType,
+                origin: point,
+                current: point,
+            });
             return;
         }
 
@@ -483,7 +499,27 @@ export const Canvas = ({
         } else if (canvasState.mode === CanvasMode.Pencil) {
             insertPath();
         } else if (canvasState.mode === CanvasMode.Inserting) {
-            insertLayer(canvasState.layerType, point);
+            if (canvasState.origin && canvasState.current) {
+                const origin = canvasState.origin;
+                const current = canvasState.current;
+                
+                const width = Math.abs(current.x - origin.x);
+                const height = Math.abs(current.y - origin.y);
+                const x = Math.min(origin.x, current.x);
+                const y = Math.min(origin.y, current.y);
+                
+                if (width < 10 && height < 10) {
+                    insertLayer(canvasState.layerType, { x: origin.x, y: origin.y, width: 100, height: 100 });
+                } else {
+                    insertLayer(canvasState.layerType, { x, y, width, height });
+                }
+            } else {
+                insertLayer(canvasState.layerType, { x: point.x, y: point.y, width: 100, height: 100 });
+            }
+            
+            setCanvasState({
+                mode: CanvasMode.None,
+            });
         } else {
             setCanvasState({
                 mode: canvasState.mode === CanvasMode.Hand ? CanvasMode.Hand : CanvasMode.None,
@@ -637,6 +673,27 @@ export const Canvas = ({
                             width={Math.abs(canvasState.origin.x - canvasState.current.x)}
                             height={Math.abs(canvasState.origin.y - canvasState.current.y)}
                         />
+                    )}
+                    {canvasState.mode === CanvasMode.Inserting && canvasState.origin != null && canvasState.current != null && (
+                        canvasState.layerType === LayerType.Ellipse ? (
+                            <ellipse
+                                className="fill-transparent stroke-blue-500 stroke-2"
+                                strokeDasharray="4 4"
+                                cx={Math.min(canvasState.origin.x, canvasState.current.x) + Math.abs(canvasState.origin.x - canvasState.current.x) / 2}
+                                cy={Math.min(canvasState.origin.y, canvasState.current.y) + Math.abs(canvasState.origin.y - canvasState.current.y) / 2}
+                                rx={Math.abs(canvasState.origin.x - canvasState.current.x) / 2}
+                                ry={Math.abs(canvasState.origin.y - canvasState.current.y) / 2}
+                            />
+                        ) : (
+                            <rect
+                                className="fill-transparent stroke-blue-500 stroke-2"
+                                strokeDasharray="4 4"
+                                x={Math.min(canvasState.origin.x, canvasState.current.x)}
+                                y={Math.min(canvasState.origin.y, canvasState.current.y)}
+                                width={Math.abs(canvasState.origin.x - canvasState.current.x)}
+                                height={Math.abs(canvasState.origin.y - canvasState.current.y)}
+                            />
+                        )
                     )}
                     <CursorsPresence />
                     {pencilDraft != null && pencilDraft.length > 0 && (
