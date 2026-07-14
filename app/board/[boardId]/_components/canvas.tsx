@@ -32,16 +32,9 @@ import { cn, colorToCss, connectionIdToColor, findIntersectingLayersWithRectangl
 import { Info } from "./info";
 import { Participants } from "./participants";
 import { Toolbar } from "./toolbar";
-import {
-    useHistory,
-    useCanUndo,
-    useCanRedo,
-    useMutation,
-    useStorage,
-    useOthersMapped,
-    useSelf,
-    useMyPresence,
-} from "@liveblocks/react/suspense";
+import { useHistory, useCanUndo, useCanRedo, useMutation, useStorage, useOthersMapped, useSelf, useMyPresence } from "@liveblocks/react/suspense";
+import { useMutation as useConvexMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { CursorsPresence } from "./cursors-presence";
 import { LayerPreview } from "./layer-preview";
 import { SelectionBox } from "./selection-box";
@@ -58,6 +51,7 @@ interface CanvasProps {
 export const Canvas = ({
     boardId,
 }: CanvasProps) => {
+    const scheduleImageCleanup = useConvexMutation(api.image.scheduleImageCleanup);
     const layerIds = useStorage((root) => root.layerIds);
 
     const pencilDraft = useSelf((me) => me.presence.pencilDraft);
@@ -330,7 +324,15 @@ export const Canvas = ({
                 case LayerType.Rectangle:
                 case LayerType.Ellipse:
                 case LayerType.Text:
-                case LayerType.Note: {
+                case LayerType.Note:
+                case LayerType.Image: {
+                    if (type === LayerType.Image) {
+                        const imageLayer = layer as LiveObject<ImageLayer>;
+                        const src = imageLayer.get("src") as string | undefined;
+                        if (src) {
+                            scheduleImageCleanup({ roomId: boardId, src }).catch(console.error);
+                        }
+                    }
                     // We already checked the bounding box at the top of the loop!
                     // If we get here, it intersects!
                     liveLayers.delete(layerId);
@@ -339,7 +341,7 @@ export const Canvas = ({
                     break;
                 }}
         }
-    }, [setCanvasState, eraserSize]);
+    }, [setCanvasState, eraserSize, boardId, scheduleImageCleanup]);
 
     const insertEraserStrokes = useMutation((
         { storage, self, setMyPresence }
