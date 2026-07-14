@@ -15,7 +15,16 @@ import {
     XYWH,
     PathLayer,
     Layer,
+    ImageLayer,
 } from "@/types/canvas";
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { useUploadThing } from "@/lib/uploadthing";
+import { toast } from "sonner";
 import { useDisableScrollBounce } from "@/hooks/use-disable-scroll-bounce";
 import { useDeleteLayers } from "@/hooks/use-delete-layers";
 
@@ -125,6 +134,36 @@ export const Canvas = ({
         
         return layerId;
     }, [lastUsedColor]);
+
+    const insertImageLayer = useMutation((
+        { storage, setMyPresence },
+        src: string,
+        bounds: XYWH,
+    ) => {
+        const liveLayers = storage.get("layers");
+        if (liveLayers.size >= MAX_LAYERS) {
+            return;
+        }
+
+        const livelayerIds = storage.get("layerIds");
+        const layerId = nanoid();
+        const layer = new LiveObject<Layer>({
+            type: LayerType.Image,
+            x: bounds.x,
+            y: bounds.y,
+            height: bounds.height,
+            width: bounds.width,
+            fill: { r: 0, g: 0, b: 0 },
+            src: src,
+        });
+
+        livelayerIds.push(layerId);
+        liveLayers.set(layerId, layer);
+
+        setMyPresence({ selection: [layerId] }, { addToHistory: true });
+        
+        return layerId;
+    }, []);
 
     const translateSelectedLayers = useMutation((
         { storage, self },
@@ -575,7 +614,12 @@ export const Canvas = ({
     ) => {
         if (!e.isPrimary) return;
         
-        if (e.button === 2 || e.button === 1) {
+        if (e.button === 2) {
+            rightClickStart.current = { x: e.clientX, y: e.clientY };
+            return;
+        }
+
+        if (e.button === 1) {
             return;
         }
 
@@ -760,11 +804,48 @@ export const Canvas = ({
         }
     }, [deleteLayers, history, selectedLayer]);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const lastRightClick = useRef<Point>({ x: 0, y: 0 });
+    const rightClickStart = useRef<Point | null>(null);
+
+    const { startUpload } = useUploadThing("imageUploader", {
+        onClientUploadComplete: (res) => {
+            if (res && res[0]) {
+                insertImageLayer(res[0].url, {
+                    x: lastRightClick.current.x,
+                    y: lastRightClick.current.y,
+                    width: 300,
+                    height: 300,
+                });
+            }
+        },
+        onUploadError: (error) => {
+            toast.error(`Upload failed: ${error.message}`);
+        },
+    });
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        toast.info("Uploading image...");
+        await startUpload([file]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
     return (
         <main
             className="h-full w-full relative bg-neutral-100 touch-none"
             onContextMenu={(e) => e.preventDefault()}
         >
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                style={{ display: "none" }} 
+            />
             <Info boardId={boardId} />
             <Participants />
             <Toolbar
@@ -801,11 +882,23 @@ export const Canvas = ({
                 camera={camera}
                 setLastUsedColor={setLastUsedColor}
             />
+            <ContextMenu>
+            <ContextMenuTrigger asChild>
             <svg
                 className={cn(
                     "h-screen w-screen touch-none",
                     canvasState.mode === CanvasMode.Hand ? "cursor-grab active:cursor-grabbing" : ""
                 )}
+                onContextMenu={(e) => {
+                    if (rightClickStart.current) {
+                        const dist = Math.abs(e.clientX - rightClickStart.current.x) + Math.abs(e.clientY - rightClickStart.current.y);
+                        if (dist > 5) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                    lastRightClick.current = pointerEventToCanvasPoint(e, camera);
+                }}
                 onWheel={onWheel}
                 onPointerMove={onPointerMove}
                 onPointerLeave={onPointerLeave}
@@ -884,6 +977,13 @@ export const Canvas = ({
                     )}
                 </g>
             </svg>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="w-48">
+                <ContextMenuItem onClick={() => fileInputRef.current?.click()}>
+                    Upload Image
+                </ContextMenuItem>
+            </ContextMenuContent>
+            </ContextMenu>
         </main>
     );
 };

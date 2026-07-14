@@ -8,6 +8,7 @@ import { Ellipse } from "./ellipse";
 import { Text } from "./text";
 import { Note } from "./note";
 import { Path } from "./path";
+import { ImageLayer } from "./image-layer";
 import { colorToCss } from "@/lib/utils";
 
 interface LayerPreviewProps {
@@ -89,6 +90,16 @@ export const LayerPreview = memo(({
         case LayerType.Rectangle:
             return (
                 <Rectangle
+                    id={id}
+                    layer={layer}
+                    onPointerDown={onLayerPointerDown}
+                    onPointerEnter={onLayerPointerEnter}
+                    selectionColor={selectionColor}
+                />
+            );
+        case LayerType.Image:
+            return (
+                <ImageLayer
                     id={id}
                     layer={layer}
                     onPointerDown={onLayerPointerDown}

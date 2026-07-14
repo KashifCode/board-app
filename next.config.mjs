@@ -7,7 +7,8 @@ const nextConfig = {
                 hostname: "img.clerk.com",
             }
         ]
-    }
+    },
+    allowedDevOrigins: ['192.168.42.142'],
 };
 
 export default nextConfig;
