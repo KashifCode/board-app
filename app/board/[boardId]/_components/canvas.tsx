@@ -507,7 +507,7 @@ export const Canvas = ({
     }, []);
 
     const onPointerMove = useMutation((
-        { setMyPresence },
+        { setMyPresence, self },
         e: React.PointerEvent
     ) => {
         e.preventDefault();
@@ -546,11 +546,13 @@ export const Canvas = ({
             }
         } else if (canvasState.mode === CanvasMode.Eraser) {
             setCanvasState((prev) => ({ ...prev, current }));
-            updateMyPresence({
-                cursor: current,
-                eraserDraft: myPresence.eraserDraft ? [...myPresence.eraserDraft, [current.x, current.y]] : [[current.x, current.y]]
-            });
-            eraseRadius(current, canvasState.current);
+            if (e.buttons === 1) {
+                setMyPresence({
+                    cursor: current,
+                    eraserDraft: self.presence.eraserDraft ? [...self.presence.eraserDraft, [current.x, current.y]] : [[current.x, current.y]]
+                });
+                eraseRadius(current, canvasState.current);
+            }
         }
 
         setMyPresence({ cursor: current });
