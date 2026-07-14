@@ -13,11 +13,13 @@ import {
     Point,
     Side,
     XYWH,
+    PathLayer,
+    Layer,
 } from "@/types/canvas";
 import { useDisableScrollBounce } from "@/hooks/use-disable-scroll-bounce";
 import { useDeleteLayers } from "@/hooks/use-delete-layers";
 
-import { cn, colorToCss, connectionIdToColor, findIntersectingLayersWithRectangle, penPointsToPathLayer, pointerEventToCanvasPoint, resizeBounds } from "@/lib/utils";
+import { cn, colorToCss, connectionIdToColor, findIntersectingLayersWithRectangle, penPointsToPathLayer, pointerEventToCanvasPoint, resizeBounds, distToSegment, distBetweenSegments } from "@/lib/utils";
 import { Info } from "./info";
 import { Participants } from "./participants";
 import { Toolbar } from "./toolbar";
@@ -29,6 +31,7 @@ import {
     useStorage,
     useOthersMapped,
     useSelf,
+    useMyPresence,
 } from "@liveblocks/react/suspense";
 import { CursorsPresence } from "./cursors-presence";
 import { LayerPreview } from "./layer-preview";
@@ -36,7 +39,7 @@ import { SelectionBox } from "./selection-box";
 import { SelectionTools } from "./selection-tools";
 import { Path } from "./path";
 
-const MAX_LAYERS = 100;
+const MAX_LAYERS = 10000;
 const SELECTON_NET_THRESHOLD = 5;
 
 interface CanvasProps {
@@ -52,6 +55,8 @@ export const Canvas = ({
     const selectedLayerId = useSelf((me) => me.presence.selection[0]);
     const selectedLayer = useStorage((root) => selectedLayerId ? root.layers[selectedLayerId] : undefined);
     
+    const [myPresence, updateMyPresence] = useMyPresence();
+    
     const [canvasState, setCanvasState] = useState<CanvasState>({
         mode: CanvasMode.None,
     });
@@ -61,6 +66,7 @@ export const Canvas = ({
         g: 0,
         b: 0,
     });
+    const [eraserSize, setEraserSize] = useState<number>(20);
 
     const zoomToPoint = useCallback((zoomAmount: number, clientX: number, clientY: number) => {
         setCamera((camera) => {
@@ -184,7 +190,7 @@ export const Canvas = ({
 
         const ids = findIntersectingLayersWithRectangle(
             layerIds,
-            new Map(Object.entries(layers.toJSON())) as any,
+            new Map(Object.entries(layers.toJSON())) as ReadonlyMap<string, Layer>,
             origin,
             current,
         );
@@ -206,6 +212,116 @@ export const Canvas = ({
             })
         }
     }, []);
+
+    const activeEraserSession = useRef<Set<string>>(new Set());
+
+    // Move isPathLayer OUTSIDE so it can be reused
+    const isPathLayer = (layer: LiveObject<Layer>): layer is LiveObject<PathLayer> => {
+        return layer.get("type") === LayerType.Path;
+    };
+
+    const eraseRadius = useMutation((
+        { storage },
+        current: Point,
+        prevCurrent?: Point,
+    ) => {
+        const liveLayers = storage.get("layers");
+        const liveLayerIds = storage.get("layerIds");
+
+        const currentLayerIds: string[] = [];
+        for (let i = 0; i < liveLayerIds.length; i++) {
+            const id = liveLayerIds.get(i);
+            if (id) currentLayerIds.push(id);
+        }
+
+        for (const layerId of currentLayerIds) {
+            const layer = liveLayers.get(layerId);
+            if (!layer) continue;
+
+            const type = layer.get("type");
+            const x = layer.get("x");
+            const y = layer.get("y");
+
+            const e1 = prevCurrent || current;
+            const e2 = current;
+            const width = layer.get("width");
+            const height = layer.get("height");
+
+            // Bounding box filter for ALL layers (including paths) to fix lag!
+            const closestX = Math.max(x as number, Math.min(current.x, (x as number) + (width as number)));
+            const closestY = Math.max(y as number, Math.min(current.y, (y as number) + (height as number)));
+            if (distToSegment({ x: closestX, y: closestY }, e1, e2) > eraserSize) {
+                continue;
+            }
+
+            if (isPathLayer(layer)) {
+                const points = layer.get("points");
+                if (!points || points.length === 0) continue;
+
+                let isIntersecting = false;
+                for (let i = 0; i < points.length; i++) {
+                    const p = points[i];
+                    const pXy = { x: p[0] + (x as number), y: p[1] + (y as number) };
+
+                    if (i === 0) {
+                        if (distToSegment(pXy, e1, e2) <= eraserSize) {
+                            isIntersecting = true;
+                            break;
+                        }
+                    } else {
+                        const prevP = points[i - 1];
+                        const prevPxy = { x: prevP[0] + (x as number), y: prevP[1] + (y as number) };
+                        if (distBetweenSegments(prevPxy, pXy, e1, e2) <= eraserSize) {
+                            isIntersecting = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isIntersecting) {
+                    if (!activeEraserSession.current.has(layerId)) {
+                        activeEraserSession.current.add(layerId);
+                        setCanvasState(prev => prev.mode === CanvasMode.Eraser ? {
+                            ...prev, 
+                            erasedLayerIds: [...(prev.erasedLayerIds || []), layerId]
+                        } : prev);
+                    }
+                }
+            } else switch (type) {
+                case LayerType.Rectangle:
+                case LayerType.Ellipse:
+                case LayerType.Text:
+                case LayerType.Note: {
+                    // We already checked the bounding box at the top of the loop!
+                    // If we get here, it intersects!
+                    liveLayers.delete(layerId);
+                    const index = liveLayerIds.indexOf(layerId);
+                    if (index !== -1) liveLayerIds.delete(index);
+                    break;
+                }}
+        }
+    }, [setCanvasState, eraserSize]);
+
+    const insertEraserStrokes = useMutation((
+        { storage, self, setMyPresence }
+    ) => {
+        const draft = self.presence.eraserDraft;
+        if (!draft || activeEraserSession.current.size === 0) return;
+        
+        const liveLayers = storage.get("layers");
+        
+        for (const layerId of activeEraserSession.current) {
+            const layer = liveLayers.get(layerId);
+            if (layer && isPathLayer(layer)) {
+                const eraserStrokes = layer.get("eraserStrokes") || [];
+                const localDraftStrokes = draft.map(p => [p[0] - (layer.get("x") as number), p[1] - (layer.get("y") as number)]);
+                layer.update({ eraserStrokes: [...eraserStrokes, { points: localDraftStrokes, size: eraserSize }] });
+            }
+        }
+        activeEraserSession.current.clear();
+        setMyPresence({ eraserDraft: null });
+        setCanvasState(prev => prev.mode === CanvasMode.Eraser ? { ...prev, erasedLayerIds: [] } : prev);
+    }, [eraserSize]);
 
     const continueDrawing = useMutation((
         { self, setMyPresence },
@@ -429,6 +545,13 @@ export const Canvas = ({
                     current,
                 });
             }
+        } else if (canvasState.mode === CanvasMode.Eraser) {
+            setCanvasState((prev) => ({ ...prev, current }));
+            updateMyPresence({
+                cursor: current,
+                eraserDraft: myPresence.eraserDraft ? [...myPresence.eraserDraft, [current.x, current.y]] : [[current.x, current.y]]
+            });
+            eraseRadius(current, canvasState.current);
         }
 
         setMyPresence({ cursor: current });
@@ -456,6 +579,15 @@ export const Canvas = ({
         }
 
         const point = pointerEventToCanvasPoint(e, camera);
+        
+        if (canvasState.mode === CanvasMode.Eraser) {
+            activeEraserSession.current.clear();
+            setCanvasState(prev => ({ ...prev, current: point, erasedLayerIds: [] }));
+            updateMyPresence({ eraserDraft: [[point.x, point.y]] });
+            eraseRadius(point);
+            return;
+        }
+
         if (canvasState.mode === CanvasMode.Inserting) {
             setCanvasState({
                 mode: CanvasMode.Inserting,
@@ -520,6 +652,8 @@ export const Canvas = ({
             setCanvasState({
                 mode: CanvasMode.None,
             });
+        } else if (canvasState.mode === CanvasMode.Eraser) {
+            insertEraserStrokes();
         } else {
             setCanvasState({
                 mode: canvasState.mode === CanvasMode.Hand ? CanvasMode.Hand : CanvasMode.None,
@@ -540,11 +674,15 @@ export const Canvas = ({
     const selections = useOthersMapped((other) => other.presence.selection);
 
     const onLayerPointerDown = useMutation((
-        { self, setMyPresence },
+        { self, setMyPresence, storage },
         e: React.PointerEvent,
         layerId: string,
     ) => {
         if (canvasState.mode === CanvasMode.Pencil || canvasState.mode === CanvasMode.Inserting) {
+            return;
+        }
+
+        if (canvasState.mode === CanvasMode.Eraser) {
             return;
         }
 
@@ -630,6 +768,25 @@ export const Canvas = ({
                 zoomIn={zoomIn}
                 zoomOut={zoomOut}
             />
+            {canvasState.mode === CanvasMode.Eraser && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl p-2 flex items-center gap-x-2 shadow-sm border border-neutral-200 z-50">
+                    {[10, 20, 30, 40].map((size) => (
+                        <button
+                            key={size}
+                            onClick={() => setEraserSize(size)}
+                            className={cn(
+                                "flex items-center justify-center w-10 h-10 rounded-lg hover:bg-neutral-100 transition",
+                                eraserSize === size && "bg-neutral-100"
+                            )}
+                        >
+                            <div 
+                                className="bg-neutral-800 rounded-full" 
+                                style={{ width: size, height: size }}
+                            />
+                        </button>
+                    ))}
+                </div>
+            )}
             <SelectionTools
                 camera={camera}
                 setLastUsedColor={setLastUsedColor}
@@ -660,6 +817,8 @@ export const Canvas = ({
                             id={layerId}
                             onLayerPointerDown={onLayerPointerDown}
                             selectionColor={layerIdsToColorSelection[layerId]}
+                            isErasing={canvasState.mode === CanvasMode.Eraser && canvasState.erasedLayerIds?.includes(layerId)}
+                            eraserSize={eraserSize}
                         />
                     ))}
                     <SelectionBox
@@ -703,6 +862,14 @@ export const Canvas = ({
                             x={0}
                             y={0}
 
+                        />
+                    )}
+                    {canvasState.mode === CanvasMode.Eraser && canvasState.current != null && (
+                        <circle
+                            cx={canvasState.current.x}
+                            cy={canvasState.current.y}
+                            r={eraserSize}
+                            className="fill-red-500/20 stroke-red-500 stroke-2 pointer-events-none"
                         />
                     )}
                 </g>

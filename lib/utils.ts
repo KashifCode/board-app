@@ -84,6 +84,44 @@ export function resizeBounds(
   return result;
 };
 
+export function sqr(x: number) { 
+  return x * x; 
+}
+
+export function dist2(v: {x: number, y: number}, w: {x: number, y: number}) { 
+  return sqr(v.x - w.x) + sqr(v.y - w.y); 
+}
+
+export function distToSegmentSquared(p: {x: number, y: number}, v: {x: number, y: number}, w: {x: number, y: number}) {
+  const l2 = dist2(v, w);
+  if (l2 === 0) return dist2(p, v);
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return dist2(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) });
+}
+
+export function distToSegment(p: {x: number, y: number}, v: {x: number, y: number}, w: {x: number, y: number}) {
+  return Math.sqrt(distToSegmentSquared(p, v, w));
+}
+
+export function distBetweenSegments(
+  p1: {x: number, y: number}, p2: {x: number, y: number},
+  p3: {x: number, y: number}, p4: {x: number, y: number}
+) {
+  // Check for intersection
+  const ccw = (a: Point, b: Point, c: Point) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  if (ccw(p1, p3, p4) * ccw(p2, p3, p4) <= 0 && ccw(p3, p1, p2) * ccw(p4, p1, p2) <= 0) {
+    return 0;
+  }
+  
+  return Math.sqrt(Math.min(
+    distToSegmentSquared(p1, p3, p4),
+    distToSegmentSquared(p2, p3, p4),
+    distToSegmentSquared(p3, p1, p2),
+    distToSegmentSquared(p4, p1, p2)
+  ));
+}
+
 export function findIntersectingLayersWithRectangle(
   layerIds: readonly string[],
   layers: ReadonlyMap<string, Layer>,

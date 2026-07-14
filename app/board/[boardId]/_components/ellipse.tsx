@@ -5,6 +5,7 @@ interface EllipseProps {
     id: string;
     layer: EllipseLayer;
     onPointerDown: (e: React.PointerEvent, id: string) => void;
+    onPointerEnter?: (e: React.PointerEvent, id: string) => void;
     selectionColor?: string;
 }
 
@@ -12,12 +13,14 @@ export const Ellipse = ({
     id,
     layer,
     onPointerDown,
+    onPointerEnter,
     selectionColor
 }: EllipseProps) => {
     return (
         <ellipse
             className="drop-shadow-md"
             onPointerDown={(e) => onPointerDown(e, id)}
+            onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e, id) : undefined}
             style={{
                 transform: `translate(${layer.x}px, ${layer.y}px)`
             }}

@@ -1,4 +1,4 @@
-import { Circle, Hand, MousePointer2, Pencil, Redo2, Square, StickyNote, Type, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { Circle, Eraser, Hand, MousePointer2, Pencil, Redo2, Square, StickyNote, Type, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { CanvasMode, CanvasState, LayerType } from "@/types/canvas";
 
@@ -125,6 +125,19 @@ export const Toolbar = ({
                         }}
                         isActive={
                             canvasState.mode === CanvasMode.Pencil
+                        }
+                    />
+                    <ToolButton
+                        label="Eraser"
+                        icon={Eraser}
+                        onClick={() => {
+                            setCanvasState({
+                                mode: CanvasMode.Eraser,
+                            });
+                            unSelectLayers();
+                        }}
+                        isActive={
+                            canvasState.mode === CanvasMode.Eraser
                         }
                     />
                 </div>

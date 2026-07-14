@@ -47,6 +47,10 @@ export type PathLayer = {
     fill: Color;
     points: number[][];
     value?: string;
+    eraserStrokes?: {
+        points: number[][];
+        size: number;
+    }[];
 };
 
 export type TextLayer = {
@@ -121,6 +125,11 @@ export type CanvasState =
     }
     | {
         mode: CanvasMode.Hand;
+    }
+    | {
+        mode: CanvasMode.Eraser;
+        current?: Point;
+        erasedLayerIds?: string[];
     };
 
 export enum CanvasMode {
@@ -132,6 +141,7 @@ export enum CanvasMode {
     Resizing,
     Pencil,
     Hand,
+    Eraser,
 };
 
 export type Layer = RectangleLayer | EllipseLayer | PathLayer | TextLayer | NoteLayer;

@@ -28,6 +28,7 @@ export const Room = ({
                     cursor: null,
                     selection: [],
                     pencilDraft: null,
+                    eraserDraft: null,
                     penColor: null
                 }}
                 initialStorage={{

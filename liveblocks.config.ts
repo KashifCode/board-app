@@ -15,6 +15,7 @@ declare global {
       cursor: { x: number; y: number } | null;
       selection: string[];
       pencilDraft: [x: number, y: number, presssure: number][] | null;
+      eraserDraft: [x: number, y: number][] | null;
       penColor: Color | null;
     };
 

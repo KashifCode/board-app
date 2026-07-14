@@ -11,9 +11,9 @@ const font = Kalam({
 })
 
 const calculateFontSize = (width: number, height: number) => {
-    const minFontSize = 14;
+    const minFontSize = 24;
     const maxFontSize = 96;
-    const scaleFactor = 0.15;
+    const scaleFactor = 0.2;
     const fontSizeBasedOnHeight = height * scaleFactor;
     const fontSizeBasedOnWidth = width * scaleFactor;
 
@@ -24,6 +24,7 @@ interface NoteProps {
     id: string;
     layer: NoteLayer;   
     onPointerDown: (e: React.PointerEvent, id: string) => void;
+    onPointerEnter?: (e: React.PointerEvent, id: string) => void;
     selectionColor?: string;
 };
 
@@ -31,6 +32,7 @@ export const Note = ({
     id,
     layer,
     onPointerDown,
+    onPointerEnter,
     selectionColor
 }: NoteProps) => {
     const { x, y, width, height, fill, value } = layer;
@@ -55,6 +57,7 @@ export const Note = ({
             width={width}
             height={height}
             onPointerDown={(e) => onPointerDown(e, id)}
+            onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e, id) : undefined}
             style={{
                 outline: selectionColor ? `1px solid ${selectionColor}`: 'none',
                 backgroundColor: fill ? colorToCss(fill) : "#FFF9B1",
