@@ -27,6 +27,7 @@ export type RectangleLayer = {
     width: number;
     fill: Color;
     value?: string;
+    fontSize?: number;
 };
 
 export type EllipseLayer = {
@@ -37,6 +38,7 @@ export type EllipseLayer = {
     width: number;
     fill: Color;
     value?: string;
+    fontSize?: number;
 };
 
 export type PathLayer = {
@@ -48,6 +50,7 @@ export type PathLayer = {
     fill: Color;
     points: number[][];
     value?: string;
+    fontSize?: number;
     eraserStrokes?: {
         points: number[][];
         size: number;
@@ -62,6 +65,7 @@ export type TextLayer = {
     width: number;
     fill: Color;
     value?: string;
+    fontSize?: number;
 };
 
 export type NoteLayer = {
@@ -72,6 +76,7 @@ export type NoteLayer = {
     width: number;
     fill: Color;
     value?: string;
+    fontSize?: number;
 };
 
 export type ImageLayer = {
@@ -82,6 +87,7 @@ export type ImageLayer = {
     width: number;
     fill: Color;
     value?: string;
+    fontSize?: number;
     src: string;
 };
 

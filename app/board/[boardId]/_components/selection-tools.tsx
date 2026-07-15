@@ -6,22 +6,34 @@ import { BringToFront, SendToBack, Trash2 } from "lucide-react";
 import { Hint } from "@/components/hint";
 import { Camera, Color } from "@/types/canvas";
 import { Button } from "@/components/ui/button";
-import { useMutation, useSelf } from "@liveblocks/react/suspense";
+import { useMutation, useSelf, useStorage } from "@liveblocks/react/suspense";
 import { useSelectionBounds } from "@/hooks/use-selection-bounds";
 import { useDeleteLayers } from "@/hooks/use-delete-layers";
 
 import { ColorPicker } from "./color-picker";
+import { FontSizePicker } from "./font-size-picker";
 
 interface SelectionToolsProps {
     camera: Camera;
     setLastUsedColor: (color: Color) => void;
+    setLastUsedFontSize?: (size: number) => void;
 }
 
 export const SelectionTools = memo(({
     camera,
     setLastUsedColor,
+    setLastUsedFontSize,
 }: SelectionToolsProps) => {
     const selection = useSelf((me) => me.presence.selection);
+    const layers = useStorage((root) => root.layers);
+
+    let selectedFontSize: number | undefined;
+    if (selection && selection.length > 0 && layers) {
+        const firstLayer = layers[selection[0]];
+        if (firstLayer && 'fontSize' in firstLayer) {
+            selectedFontSize = firstLayer.fontSize;
+        }
+    }
 
     const moveToBack = useMutation((
         { storage }
@@ -81,6 +93,20 @@ export const SelectionTools = memo(({
         setLastUsedColor,
     ]);
 
+    const setFontSize = useMutation((
+        { storage },
+        size: number,
+    ) => {
+        const liveLayers = storage.get("layers");
+        if (setLastUsedFontSize) {
+            setLastUsedFontSize(size);
+        }
+
+        selection.forEach((id) => {
+            liveLayers.get(id)?.set("fontSize", size);
+        })
+    }, [selection, setLastUsedFontSize]);
+
     const deleteLayers = useDeleteLayers();
 
     const selectionBounds = useSelectionBounds();
@@ -104,6 +130,11 @@ export const SelectionTools = memo(({
         >
             <ColorPicker
                 onChange={setFill}
+            />
+
+            <FontSizePicker
+                value={selectedFontSize}
+                onChange={setFontSize}
             />
 
             <div
