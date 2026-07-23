@@ -37,7 +37,6 @@ export const EmptyBoards = () => {
                 alt="Empty"
                 width={110}
                 height={110}
-                style={{ width: "auto", height: "auto" }}
             />
             <h2 className="text-2xl font-semibold mt-6">
                 Create your first board!

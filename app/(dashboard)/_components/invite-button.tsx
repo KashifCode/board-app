@@ -18,7 +18,31 @@ export const InviteButton = () => {
             </Button>
         </DialogTrigger>
         <DialogContent title="Add Members" className="p-0 bg-transparent border-none max-w-[835px] lg:max-w-[880px]">
-            <OrganizationProfile routing="hash"/>
+            <OrganizationProfile 
+                routing="hash"
+                appearance={{
+                    elements: {
+                        rootBox: {
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: "100%",
+                            maxHeight: "80vh",
+                        },
+                        cardBox: {
+                            maxHeight: "80vh",
+                            width: "100%",
+                            display: "flex",
+                        },
+                        card: {
+                            maxHeight: "80vh",
+                            width: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                        }
+                    }
+                }}
+            />
         </DialogContent>
     </Dialog>
   )

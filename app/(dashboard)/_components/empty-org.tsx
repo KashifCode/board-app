@@ -18,7 +18,6 @@ export const EmptyOrg = () => {
                 alt="Empty"
                 width={200}
                 height={200}
-                style={{ width: "auto", height: "auto" }}
             />
             <h2 className=" text-2xl font-semibold mt-6">
                 Welcome to Board
@@ -39,6 +38,28 @@ export const EmptyOrg = () => {
                     >
                         <CreateOrganization 
                             routing="hash"
+                            appearance={{
+                                elements: {
+                                    rootBox: {
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        width: "100%",
+                                        maxHeight: "80vh",
+                                    },
+                                    cardBox: {
+                                        maxHeight: "80vh",
+                                        width: "100%",
+                                        display: "flex",
+                                    },
+                                    card: {
+                                        maxHeight: "80vh",
+                                        width: "100%",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                    }
+                                }
+                            }}
                         />
                     </DialogContent>
                 </Dialog>

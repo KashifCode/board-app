@@ -8,7 +8,6 @@ export const EmptyFavorites = () => {
                 alt="Empty"
                 width={140}
                 height={140}
-                style={{ width: "auto", height: "auto" }}
             />
             <h2 className="text-2xl font-semibold mt-6">
                 No favorite boards!
